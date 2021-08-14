@@ -1,58 +1,22 @@
 <template>
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
-    <home-swiper :banners="banners" />
-    <recommend-view :recommends="recommends" />
-    <feature-view />
-    <tab-control class="tab-control" 
-                  :titles="titles"
-                  @tabClick="tabClick"
-    />
-    <goods-list :goods="showGoods"></goods-list>
-    <ul>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-      <li>111</li>
-    </ul>
+    <scroll class="content" ref="scroll" 
+                            :probe-type="3" 
+                            @scroll="contentScroll"
+                            :pull-up-load="true"
+                            @pullingUp="loadMore">
+      <home-swiper :banners="banners" />
+      <recommend-view :recommends="recommends" />
+      <feature-view />
+      <tab-control class="tab-control" 
+                    :titles="titles"
+                    @tabClick="tabClick"
+      />
+      <goods-list :goods="showGoods"></goods-list>
+    </scroll>
+
+    <back-top class="back-top" @click.native="backClick" v-show="isShowBackTop"></back-top>
   </div>
 </template>
 
@@ -62,8 +26,10 @@
   import FeatureView from './childComponents/FeatureView.vue'
 
   import NavBar from 'components/common/navBar/TabBar.vue'
+  import Scroll from 'components/common/scroll/Scroll.vue'
   import TabControl from 'components/content/tabControl/TabControl.vue'
   import GoodsList from 'components/content/goods/GoodsList.vue'
+  import BackTop from 'components/content/backTop/BackTop.vue'
 
   import { getHomeMultidata,getHomeGoods } from 'network/home.js'
   
@@ -74,8 +40,10 @@
       RecommendView,
       FeatureView,
       NavBar,
+      Scroll,
       TabControl,
-      GoodsList
+      GoodsList,
+      BackTop
     }, 
     data() {
       return {
@@ -87,7 +55,8 @@
           'new': {page: 0,list: []},
           'sell': {page: 0,list: []},
         },
-        currentType: 'pop'
+        currentType: 'pop',
+        isShowBackTop: false,
       }
     }, 
     computed: {
@@ -123,7 +92,28 @@
             break;
         }
       },
+      /**
+       * 回到顶部
+       */
+      backClick() {
+        this.$refs.scroll.scroll.scrollTo(0, 100,500);
+      },
+      /**
+       * 判断当前滑动位置决定是否隐藏backTop组件
+       */
+      contentScroll(position) {
+        this.isShowBackTop = -(position.y)> 1000;
+      },
 
+      /**
+       * 加载更多数据
+       */
+      loadMore() {
+        this.getHomeGoods(this.currentType);
+        this.$refs.scroll.refresh();
+      },
+
+      // 网络请求
       /**
        * 请求轮播图的数据
        */
@@ -142,10 +132,10 @@
         getHomeGoods(type,page).then( res => {
           this.goods[type].list.push(...res.data.list);//将新请求到的商品信息加入到对应的商品信息集合中
           this.goods[type].page += 1;//将该类型商品页数+1
+        // 完成上拉加载更多
+          this.$refs.scroll.finishPullUp()
         })
       }
-       
-      
 
     }
   }
@@ -154,7 +144,9 @@
 <style scoped>
 
   #home {
+    height: 100vh;
     padding-top: 44px;
+    /* position: relative; */
   }
 
   .home-nav {
@@ -169,9 +161,19 @@
   }
 
   .tab-control {
-    position: sticky;
+    /* position: sticky; */
     top:44px;
     z-index: 9;
+  }
+
+  .content {
+    height: calc(100vh - 93px);
+    overflow: hidden; 
+    /* position: absolute;
+    top: 44px;
+    bottom: 49px; */
+    left: 0;
+    right: 0;
   }
 
 </style>
