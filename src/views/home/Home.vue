@@ -76,7 +76,7 @@
       }
     },
     activated () {
-      //回到首页时，滚动到上次离开时的位置
+      //回到首页时，滚动到上次离开时的位置  
       this.$refs.scroll.scrollTo(0,this.saveY,0);
       this.$refs.scroll.refresh();
     },
