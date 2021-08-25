@@ -40,7 +40,8 @@
 
   import { getHomeMultidata,getHomeGoods } from 'network/home.js'
   import { debounce } from 'common/utils.js'
-  
+  import { itemImgListenerMixin } from 'common/mixin.js'
+   
   export default {
     name: "Home",
     components: {
@@ -70,6 +71,7 @@
         saveY: 0  //离开Home组件时的位置，往下滚动时，Y值为负数
       }
     }, 
+    mixins: [itemImgListenerMixin],
     computed: {
       showGoods() {
         return  this.goods[this.currentType].list;
@@ -93,17 +95,6 @@
       this.getHomeGoods('new');
       this.getHomeGoods('sell');
 
-    },
-    mounted () {
-      //图片完成加载之后的监听
-      const refresh = debounce(this.$refs.scroll.refresh(),500);
-       //图片加载完成之后刷新scroll的高度
-      this.$bus.$on('itemImageLoad', () => {
-        refresh();
-        // this.$refs.scroll.refresh();
-      })
-
-      
     },
     methods: {
 

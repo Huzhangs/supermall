@@ -1,12 +1,14 @@
 <template>
   <div class="detail">
-    <detail-nav-bar class="detail-nav"/>
-    <scroll class="content" ref="scroll">
-      <detail-swiper :top-images="topImages"/>
+    <detail-nav-bar class="detail-nav" @titleClick="titleClick"  ref="nav"/>
+    <scroll class="content" ref="scroll" @scroll="contentScroll">
+      <detail-swiper ref="base" :top-images="topImages"/>
       <detail-base-info :goods="goods"/>
       <detail-shop-info :shop="shop"/>
       <detail-goods-info :detail-info="detailInfo" @imageLoad="imageLoad" />
-      <detail-goods-params :goods-params="goodsParam"/>
+      <detail-goods-params ref="params" :goods-params="goodsParam"/>
+      <detail-comment-info ref="comment" :comment-info="commentInfo"/>
+      <goods-list ref="recommend" :goods="recommendList"/>
     </scroll>
   </div>
 </template>
@@ -18,10 +20,13 @@
   import DetailShopInfo from './detailComponents/DetailShopInfo.vue'
   import DetailGoodsInfo from './detailComponents/DetailGoodsInfo.vue'
   import DetailGoodsParams from './detailComponents/DetailGoodsParams.vue'
+  import DetailCommentInfo from './detailComponents/DetailCommentInfo.vue'
 
   import Scroll from 'components/common/scroll/Scroll.vue'
+  import GoodsList from 'components/content/goods/GoodsList.vue'
 
-  import { getDetails,Goods,Shop,GoodsParam } from 'network/detail.js'
+  import { getDetails,getRecommendList,Goods,Shop,GoodsParam } from 'network/detail.js'
+  import { itemImgListenerMixin } from 'common/mixin.js'
 
   export default {
     name: "Detail",
@@ -32,7 +37,9 @@
       DetailShopInfo,
       DetailGoodsInfo,
       DetailGoodsParams,
-      Scroll
+      DetailCommentInfo,
+      Scroll,
+      GoodsList
     },
     data() {
       return {
@@ -41,17 +48,24 @@
         goods: {},
         shop: {},
         detailInfo: {},
-        goodsParam: {}
+        goodsParam: {},
+        commentInfo: {},
+        recommendList: [],
+        themeTopYs: [],
+        currentIndex: 0
       }
     },
+    mixins: [itemImgListenerMixin],
     created () {
-      // 1、保存传入的商品主键id
+      // 保存传入的商品主键id
       this.iid = this.$route.params.iid;
 
-      // 2、根据获取到的商品主键获取商品详情信息
+      /**
+       * 根据获取到的商品主键获取商品详情信息
+       */
       getDetails(this.iid).then( res => {
         var data = res.result;
-        console.log(res);
+        // console.log(res);
         // 1、获取顶部轮播图信息
         this.topImages = data.itemInfo.topImages;
 
@@ -66,14 +80,63 @@
 
         // 5、获取商品参数信息
         this.goodsParam = new GoodsParam(data.itemParams.info,data.itemParams.rule);
-      } )
+
+        // 6、获取商品评论信息,判断评论是否有数据
+        if(data.rate.cRate !== 0) {
+          this.commentInfo = data.rate.list[0];
+        }
+
+      }),
+      /**
+       * 获取商品推荐信息
+       */
+      getRecommendList().then( res => {
+        this.recommendList = res.data.list;
+      })
 
     },
     methods: {
+      /**
+       * 
+       */
       imageLoad() {
-        // console.log("-----111------");
           this.$refs.scroll.refresh();
+          this.themeTopYs.push(-this.$refs.base.$el.offsetTop + 44);
+          this.themeTopYs.push(-this.$refs.params.$el.offsetTop + 44);
+          this.themeTopYs.push(-this.$refs.comment.$el.offsetTop + 44);
+          this.themeTopYs.push(-this.$refs.recommend.$el.offsetTop + 44);
+          this.themeTopYs.push(-Number.MAX_VALUE);
+      },
+      /**
+       * NavBar中的点击事件
+       */
+      titleClick(index) {
+        // 点击对应的标签滚动到对应的位置
+        this.$refs.scroll.scrollTo(0,this.themeTopYs[index],100);
+      },
+      /**
+       * 监听scroll的滚动位置
+       */
+      contentScroll(position) {
+        const positionY = -position.y;
+        // 判断滚动的当前位置是否在设置的位置中
+        let length = this.themeTopYs.length;
+        for(var i =0;i < length;i++){
+          let posx = -this.themeTopYs[i];
+          let posy = -this.themeTopYs[i+1];
+          if(positionY >= posx && positionY < posy)
+          {
+            if (this.currentIndex !== i) {
+               this.currentIndex = i;
+               this.$refs.nav.currentIndex = this.currentIndex;
+            }
+            break;
+          }
+        }
       }
+    },
+    destroyed () {
+      this.$bus.$off('itemImageLoad',this.itemImgListener);
     }
   }
 </script>

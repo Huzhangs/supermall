@@ -1,11 +1,19 @@
 import { request } from "./request";
 
+// 根据商品iid获取商品信息
 export function getDetails (iid) {
   return request ({
     url:'/detail',
     params:{
       iid
     }
+  })
+}
+
+// 获取推荐商品信息
+export function getRecommendList() {
+  return request({
+    url: '/recommend'
   })
 }
 
