@@ -36,11 +36,11 @@
   import Scroll from 'components/common/scroll/Scroll.vue'
   import TabControl from 'components/content/tabControl/TabControl.vue'
   import GoodsList from 'components/content/goods/GoodsList.vue'
-  import BackTop from 'components/content/backTop/BackTop.vue'
+
 
   import { getHomeMultidata,getHomeGoods } from 'network/home.js'
   import { debounce } from 'common/utils.js'
-  import { itemImgListenerMixin } from 'common/mixin.js'
+  import { itemImgListenerMixin,backTopListenerMixin } from 'common/mixin.js'
    
   export default {
     name: "Home",
@@ -51,8 +51,7 @@
       NavBar,
       Scroll,
       TabControl,
-      GoodsList,
-      BackTop
+      GoodsList
     }, 
     data() {
       return {
@@ -65,13 +64,12 @@
           'sell': {page: 0,list: []},
         },
         currentType: 'pop', //请求商品数据类型
-        isShowBackTop: false, //是否显示回到顶部按钮
         tabOffsetTop: 0, //tabControl距离顶部的距离
         isTabFixed: false, //是否显示tabControl
         saveY: 0  //离开Home组件时的位置，往下滚动时，Y值为负数
       }
     }, 
-    mixins: [itemImgListenerMixin],
+    mixins: [itemImgListenerMixin,backTopListenerMixin],
     computed: {
       showGoods() {
         return  this.goods[this.currentType].list;
@@ -118,17 +116,11 @@
         this.$refs.tabControl1.currentIndex = index;
       },
       /**
-       * 回到顶部
-       */
-      backClick() {
-        this.$refs.scroll.scroll.scrollTo(0, 0,500);
-      },
-      /**
        * 判断当前滑动位置决定是否隐藏backTop组件
        */
       contentScroll(position) {
         // 1、判断是否显示回到顶部
-        this.isShowBackTop = (-position.y)> 1000;
+        this.isBackTop(position);
 
         // 2、判断tabControl是否吸顶
         this.isTabFixed = (-position.y)  > this.tabOffsetTop;
@@ -138,7 +130,6 @@
        * 加载更多数据
        */
       loadMore() {
-        // console.log("执行上拉加载！！");
         this.getHomeGoods(this.currentType);
         this.$refs.scroll.refresh();
       },

@@ -10,6 +10,10 @@
       <detail-comment-info ref="comment" :comment-info="commentInfo"/>
       <goods-list ref="recommend" :goods="recommendList"/>
     </scroll>
+    <detail-bottom-bar @addToCart="addToCart"/>
+    <back-top  @click.native="backClick" v-show="isShowBackTop">
+      <img src="~assets/img/common/top.png" alt="">
+    </back-top>
   </div>
 </template>
 
@@ -21,12 +25,13 @@
   import DetailGoodsInfo from './detailComponents/DetailGoodsInfo.vue'
   import DetailGoodsParams from './detailComponents/DetailGoodsParams.vue'
   import DetailCommentInfo from './detailComponents/DetailCommentInfo.vue'
+  import DetailBottomBar from './detailComponents/DetailBottomBar.vue'
 
   import Scroll from 'components/common/scroll/Scroll.vue'
   import GoodsList from 'components/content/goods/GoodsList.vue'
 
   import { getDetails,getRecommendList,Goods,Shop,GoodsParam } from 'network/detail.js'
-  import { itemImgListenerMixin } from 'common/mixin.js'
+  import { itemImgListenerMixin,backTopListenerMixin } from 'common/mixin.js'
 
   export default {
     name: "Detail",
@@ -38,6 +43,7 @@
       DetailGoodsInfo,
       DetailGoodsParams,
       DetailCommentInfo,
+      DetailBottomBar,
       Scroll,
       GoodsList
     },
@@ -52,10 +58,11 @@
         commentInfo: {},
         recommendList: [],
         themeTopYs: [],
-        currentIndex: 0
+        currentIndex: 0,
+        test: '哈哈哈'
       }
     },
-    mixins: [itemImgListenerMixin],
+    mixins: [itemImgListenerMixin,backTopListenerMixin],
     created () {
       // 保存传入的商品主键id
       this.iid = this.$route.params.iid;
@@ -97,7 +104,7 @@
     },
     methods: {
       /**
-       * 
+       * 图片加载完成后获取对应组件高度和刷新scroll
        */
       imageLoad() {
           this.$refs.scroll.refresh();
@@ -133,6 +140,26 @@
             break;
           }
         }
+        this.isBackTop(position);
+      },
+      /**
+       * 添加购物车
+       */
+      addToCart() {
+        // console.log("添加到购物车");
+        // 创建商品对象信息
+        const product = {};
+        product.iid = this.iid;
+        product.imgURL = this.topImages[0];
+        product.title = this.goods.title;
+        product.desc = this.goods.desc;
+        product.price = this.goods.nowPrice;
+        // 将product分发到actions中，在actions中进行处理
+        this.$store.dispatch('addCart', product).then((res) =>{
+          // 当天骄购物车成功后弹出提示
+          // console.log("添加购物车成功");
+          this.$toast.show('添加购物车成功',2000);
+        })
       }
     },
     destroyed () {
